@@ -1,0 +1,25 @@
+/**
+ * by lcs
+ * 2016-12-17
+ */
+apply plugin: 'java'
+
+description = 'api docs helper'
+
+version = '0.0.1'
+
+def springVersion = '4.3.6.RELEASE'
+
+repositories {
+    mavenLocal()
+    maven {
+        url "http://central.maven.org/maven2/"
+    }
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    //compile 'io.swagger:swagger-core:+'
+    compile("org.springframework:spring-web:$springVersion")
+}

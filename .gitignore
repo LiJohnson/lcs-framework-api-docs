@@ -1,0 +1,20 @@
+build
+logs
+.idea
+.gradle
+local.properties
+*.iml
+*.ipr
+*.iws
+
+
+/bin/*
+!/bin/*.sh
+
+hs_err_pid*.log
+
+.v8flags.*.json
+src/test/resources/logback.xml
+
+# other
+*.local
