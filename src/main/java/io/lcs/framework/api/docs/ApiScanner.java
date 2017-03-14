@@ -2,6 +2,7 @@ package io.lcs.framework.api.docs;
 
 
 import io.lcs.framework.api.annotation.ApiInfo;
+import io.lcs.framework.api.annotation.ApiParam;
 import io.lcs.framework.api.annotation.ApiResponse;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -12,8 +13,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.*;
 import java.util.*;
 
 /**
@@ -57,6 +58,8 @@ public class ApiScanner {
 					api.setResponseDemo(apiResponse.demo());
 				}
 
+				api.setResponse(classToApiParam(method.getGenericReturnType()));
+				api.setReturnType(method.getReturnType());
 				list.add(api);
 			}
 		}
@@ -107,12 +110,52 @@ public class ApiScanner {
 			AnnotationMetadata annotationMetadata = metadataReader.getAnnotationMetadata();
 			Class clazz = Class.forName(annotationMetadata.getClassName());
 			for (Class c : clazz.getInterfaces()) {
-				if (c.getName().endsWith("Constants$Constant")) {
+				if (c.getName().endsWith("IEnum")) {
 					Object[] values = (Object[]) clazz.getMethod("values").invoke(null);
 					map.put(clazz, values);
 				}
 			}
 		}
 		return map;
+	}
+
+	private static List<ApiParam> classToApiParam( Type type ){
+		Class clazz = null;
+		if( type instanceof Class ){
+			clazz = (Class) type;
+		}else if( type instanceof ParameterizedType){
+			clazz = (Class) ((ParameterizedType) type).getActualTypeArguments()[0];
+		}else{
+			return Collections.EMPTY_LIST;
+		}
+
+		if( clazz.getSuperclass() == null || clazz.getSuperclass().getName().indexOf("BasePojo") == -1 ) return Collections.EMPTY_LIST;
+		List<ApiParam> apiParamList = new ArrayList<>();
+		for (Field field : clazz.getDeclaredFields()) {
+			apiParamList.add(new Api.ApiParamImp()
+					.value(field.getName())
+					.description(getFieldComment(field))
+					.type(field.getType())
+			);
+		}
+		return apiParamList;
+	}
+
+	private static String getFieldComment(Field field){
+		if(field.getAnnotations() == null) return "";
+		for (Annotation annotation : field.getAnnotations()) {
+			if(annotation.annotationType().getName().endsWith("Comment") ){
+				try {
+					return (String) annotation.annotationType().getMethod("value").invoke(annotation);
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				} catch (NoSuchMethodException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return "";
 	}
 }

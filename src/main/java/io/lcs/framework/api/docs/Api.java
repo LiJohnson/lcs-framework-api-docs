@@ -3,6 +3,7 @@ package io.lcs.framework.api.docs;
 import io.lcs.framework.api.annotation.ApiInfo;
 import io.lcs.framework.api.annotation.ApiParam;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,8 +15,9 @@ public class Api {
 	private String[] api;
 	private ApiInfo info;
 	private String paramDemo;
-	private List response;
+	private List<ApiParam> response;
 	private String responseDemo;
+	private Class<?> returnType;
 
 	public Api(){
 		this.response = new ArrayList();
@@ -44,11 +46,11 @@ public class Api {
 		this.paramDemo = paramDemo;
 	}
 
-	public List getResponse() {
+	public List<ApiParam> getResponse() {
 		return response;
 	}
 
-	public void setResponse(List response) {
+	public void setResponse(List<ApiParam> response) {
 		this.response = response;
 	}
 
@@ -66,5 +68,78 @@ public class Api {
 
 	public void setInfo(ApiInfo info) {
 		this.info = info;
+	}
+
+	public Class<?> getReturnType() {
+		return returnType;
+	}
+
+	public void setReturnType(Class<?> returnType) {
+		this.returnType = returnType;
+	}
+
+	public static class ApiParamImp implements ApiParam {
+		private Class typeImp = Object.class;
+		private String valueImp = "";
+		private String descriptionImp = "";
+		private String demoImp = "";
+		private boolean requiredImp = false;
+
+		@Override
+		public Class type() {
+			return this.typeImp;
+		}
+
+		@Override
+		public String value() {
+			return this.valueImp;
+		}
+
+		@Override
+		public String description() {
+			return this.descriptionImp;
+		}
+
+		@Override
+		public String demo() {
+			return this.demoImp;
+		}
+
+		@Override
+		public boolean required() {
+			return this.requiredImp;
+		}
+
+		@Override
+		public Class<? extends Annotation> annotationType() {
+			return ApiParam.class;
+		}
+
+		public ApiParamImp type(Class type) {
+			this.typeImp = type;
+			return this;
+		}
+
+		public ApiParamImp value(String value) {
+			this.valueImp = value;
+			return this;
+		}
+
+
+		public ApiParamImp description(String descriptionImp) {
+			this.descriptionImp = descriptionImp;
+			return this;
+		}
+
+
+		public ApiParamImp demo( String demoImp) {
+			this.demoImp = demoImp;
+			return this;
+		}
+
+		public ApiParamImp required(boolean requiredImp) {
+			this.requiredImp = requiredImp;
+			return this;
+		}
 	}
 }

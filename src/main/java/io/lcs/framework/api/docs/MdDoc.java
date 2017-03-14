@@ -6,6 +6,7 @@ import org.springframework.util.StringUtils;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,8 +71,9 @@ public class MdDoc {
 		writer.write(MD_TEMPLATE.replace("${description}", api.getInfo().summary())
 				.replace("${api}", api.getApi()[0])
 				.replace("${params}", getParams(api))
+				.replace("${responses}", getResponse(api))
 				.replace("${paramDemo}", getParamDemo(api))
-				.replace("${responseDemo}", getResponeDemo(api))
+				.replace("${responseDemo}", getResponseDemo(api))
 		);
 		writer.append(getEnums(api, enumMap));
 		writer.flush();
@@ -93,6 +95,26 @@ public class MdDoc {
 					attributes.value(),
 					type.toString().replaceAll("\\[\\]", "[ ]"),
 					attributes.required(),
+					attributes.description(),
+					StringUtils.hasLength(attributes.demo()) ? attributes.demo() : " - "
+			));
+		}
+		return params.toString();
+	}
+
+	private static String getResponse( Api api ){
+		StringBuffer params = new StringBuffer();
+		if (api.getResponse() == null || api.getResponse().isEmpty()) {
+			return "| 无      |     |  |  - |\n";
+		}
+		for (ApiParam attributes: api.getResponse()) {
+			String type = attributes.type().getSimpleName();
+			if( attributes.type().isEnum() ){
+				type = String.format("[enum(%s)](#enum-%s) ", type, type.toLowerCase());
+			}
+			params.append(String.format("| %s      | %s | %s| %s |\n",
+					attributes.value(),
+					type.toString().replaceAll("\\[\\]", "[ ]"),
 					attributes.description(),
 					StringUtils.hasLength(attributes.demo()) ? attributes.demo() : " - "
 			));
@@ -143,11 +165,34 @@ public class MdDoc {
 		return params.toString().replace(",\n}", "\n}");
 	}
 
-	private static String getResponeDemo(Api api){
+	private static String getResponseDemo(Api api){
 		if( StringUtils.hasLength(api.getResponseDemo()) ) return api.getResponseDemo();
-		StringBuffer params = new StringBuffer("{\n");
-		params.append("}\n");
-		return params.toString().replace(",\n}", "\n}");
+		StringBuffer params = new StringBuffer();
+		String tab = "";
+		if (api.getReturnType().isAssignableFrom(List.class)) {
+			params = new StringBuffer("[\n");
+			tab += "\t";
+		}
+		params.append(tab + "{\n");
+		tab += "\t";
+		String split = "";
+		for (ApiParam apiParam:api.getResponse()) {
+			params.append(String.format("%s%s\"%s\":\"\"", split, tab, apiParam.value()));
+			if (split.length() == 0) {
+				split = ",\n";
+			}
+		}
+		params.append("\n");
+
+		tab = tab.replaceFirst("\t", "");
+		params.append(tab+"}\n");
+
+		if (api.getReturnType().isAssignableFrom(List.class)) {
+			tab = tab.replaceFirst("\t", "");
+			params.append("]\n");
+		}
+
+		return params.toString();
 	}
 
 	private static String getSummary(List<Api> list) {
@@ -202,7 +247,7 @@ public class MdDoc {
 			"\n" +
 			"| 参数            | 类型   | 描述 | 示例值 |\n" +
 			"|:----------------|:-------|:-----|:-------|\n" +
-			"|                 |        |      |        |\n" +
+			"${responses}\n" +
 			"\n" +
 			"### 示例\n" +
 			"```json\n" +

@@ -38,7 +38,6 @@ public @interface ApiInfo {
 	ApiParam[] value() default {};
 
 
-
 	String VERSION_1 = "1.0.0";
 
 }
