@@ -124,13 +124,24 @@ public class MdDoc {
 
 	private static String getEnums( Api api ,Map<Class, Object[]> enumMap  ){
 		StringBuffer enums = new StringBuffer();
-		for (ApiParam attributes: api.getInfo().value()) {
-			Object[] values = enumMap.get(attributes.type());
+		Map<Object[], Class> enumData = new HashMap<>();
+		for( ApiParam param : api.getInfo().value() ){
+			Object[] values = enumMap.get(param.type());
+			if( values == null || enumData.get(values) != null) continue;
+			enumData.put(values, param.type());
+		}
+		for( ApiParam param : api.getResponse() ){
+			Object[] values = enumMap.get(param.type());
+			if( values == null || enumData.get(values) != null) continue;
+			enumData.put(values, param.type());
+		}
+		for (Map.Entry<Object[],Class> entry:enumData.entrySet()) {
+			Object[] values = entry.getKey();
 			if( values == null ) continue;
 			StringBuffer enumValues = new StringBuffer();
 			for (Object e : values) {
 				try {
-					enumValues.append(String.format("| %s | %s |\n", attributes.type().getMethod("val").invoke(e), attributes.type().getMethod("desc").invoke(e)));
+					enumValues.append(String.format("| %s | %s |\n", e.getClass().getMethod("name").invoke(e), e.getClass().getMethod("getText").invoke(e)));
 				} catch (IllegalAccessException e1) {
 					e1.printStackTrace();
 				} catch (InvocationTargetException e1) {
@@ -139,10 +150,9 @@ public class MdDoc {
 					e1.printStackTrace();
 				}
 			}
-			enums.append(ENUM_TEMPLETE.replace("${name}", attributes.type().getSimpleName())
+			enums.append(ENUM_TEMPLETE.replace("${name}", entry.getValue().getSimpleName())
 					.replace("${enums}", enumValues))
 					.append("\n");
-
 		}
 
 		return enums.toString();
