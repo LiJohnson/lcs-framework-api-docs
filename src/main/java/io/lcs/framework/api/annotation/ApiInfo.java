@@ -31,12 +31,6 @@ public @interface ApiInfo {
 	 */
 	boolean hasImplemented() default true;
 
-	/**
-	 * 参数列表
-	 * @return
-	 */
-	ApiParam[] value() default {};
-
 
 	String VERSION_1 = "1.0.0";
 

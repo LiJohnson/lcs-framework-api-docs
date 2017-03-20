@@ -2,6 +2,8 @@ package io.lcs.framework.api.docs;
 
 import io.lcs.framework.api.annotation.ApiInfo;
 import io.lcs.framework.api.annotation.ApiParam;
+import io.lcs.framework.api.annotation.ApiRequest;
+import io.lcs.framework.api.annotation.ApiResponse;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -14,10 +16,12 @@ public class Api {
 	private String name;
 	private String[] api;
 	private ApiInfo info;
+	private ApiRequest apiRequest;
+	private ApiResponse apiResponse;
 	private String paramDemo;
 	private List<ApiParam> response;
 	private String responseDemo;
-	private Class<?> returnType;
+
 
 	public Api(){
 		this.response = new ArrayList();
@@ -70,12 +74,20 @@ public class Api {
 		this.info = info;
 	}
 
-	public Class<?> getReturnType() {
-		return returnType;
+	public ApiRequest getApiRequest() {
+		return apiRequest;
 	}
 
-	public void setReturnType(Class<?> returnType) {
-		this.returnType = returnType;
+	public void setApiRequest(ApiRequest apiRequest) {
+		this.apiRequest = apiRequest;
+	}
+
+	public ApiResponse getApiResponse() {
+		return apiResponse;
+	}
+
+	public void setApiResponse(ApiResponse apiResponse) {
+		this.apiResponse = apiResponse;
 	}
 
 	public static class ApiParamImp implements ApiParam {

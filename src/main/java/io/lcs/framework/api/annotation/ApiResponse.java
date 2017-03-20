@@ -13,7 +13,13 @@ public @interface ApiResponse {
 	 * 数据类型
 	 * @return
 	 */
-	Class type() default Object.class;
+	EType type();
+
+	/**
+	 *返回实体
+	 * @return
+	 */
+	Class bean() default Object.class;
 
 	/**
 	 * 返回参数
@@ -25,4 +31,8 @@ public @interface ApiResponse {
 	 * @return示例
 	 */
 	String demo() default "";
+
+	enum EType{
+		OBJECT, ARRAY,PAGE
+	}
 }

@@ -1,7 +1,9 @@
 package io.lcs.framework.api.docs;
 
 import io.lcs.framework.api.annotation.ApiParam;
+import io.lcs.framework.api.annotation.ApiResponse;
 import org.springframework.util.StringUtils;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -83,10 +85,10 @@ public class MdDoc {
 
 	private static String getParams( Api api ){
 		StringBuffer params = new StringBuffer();
-		if(api.getInfo().value().length == 0){
+		if(api.getApiRequest().value().length == 0){
 			return "| 无      |   |   |  |  - |\n";
 		}
-		for (ApiParam attributes: api.getInfo().value()) {
+		for (ApiParam attributes: api.getApiRequest().value()) {
 			String type = attributes.type().getSimpleName();
 			if( attributes.type().isEnum() ){
 				type = String.format("[enum(%s)](#enum-%s) ", type, type.toLowerCase());
@@ -125,7 +127,7 @@ public class MdDoc {
 	private static String getEnums( Api api ,Map<Class, Object[]> enumMap  ){
 		StringBuffer enums = new StringBuffer();
 		Map<Object[], Class> enumData = new HashMap<>();
-		for( ApiParam param : api.getInfo().value() ){
+		for( ApiParam param : api.getApiRequest().value() ){
 			Object[] values = enumMap.get(param.type());
 			if( values == null || enumData.get(values) != null) continue;
 			enumData.put(values, param.type());
@@ -162,7 +164,7 @@ public class MdDoc {
 		if( StringUtils.hasLength(api.getParamDemo()) ) return api.getParamDemo();
 		StringBuffer params = new StringBuffer("{\n");
 
-		for (ApiParam attributes : api.getInfo().value()) {
+		for (ApiParam attributes : api.getApiRequest().value()) {
 			String val = attributes.type().equals(String.class) ? "\"" + attributes.demo() + "\"" : attributes.demo();
 			if( !StringUtils.hasLength(val) ) val = "\"\"";
 			params.append(String.format("\t\"%s\":%s,\n",
@@ -170,7 +172,6 @@ public class MdDoc {
 					val
 			));
 		}
-
 		params.append("}\n");
 		return params.toString().replace(",\n}", "\n}");
 	}
@@ -179,10 +180,15 @@ public class MdDoc {
 		if( StringUtils.hasLength(api.getResponseDemo()) ) return api.getResponseDemo();
 		StringBuffer params = new StringBuffer();
 		String tab = "";
-		if (api.getReturnType().isAssignableFrom(List.class)) {
+
+		if (api.getApiResponse().type().equals(ApiResponse.EType.ARRAY)) {
 			params = new StringBuffer("[\n");
 			tab += "\t";
 		}
+		if (api.getApiResponse().type().equals(ApiResponse.EType.PAGE)) {
+			throw new NotImplementedException();
+		}
+
 		params.append(tab + "{\n");
 		tab += "\t";
 		String split = "";
@@ -197,7 +203,7 @@ public class MdDoc {
 		tab = tab.replaceFirst("\t", "");
 		params.append(tab+"}\n");
 
-		if (api.getReturnType().isAssignableFrom(List.class)) {
+		if (api.getApiResponse().type().equals(ApiResponse.EType.ARRAY)) {
 			tab = tab.replaceFirst("\t", "");
 			params.append("]\n");
 		}

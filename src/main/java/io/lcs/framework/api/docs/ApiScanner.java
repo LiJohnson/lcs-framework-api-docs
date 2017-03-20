@@ -3,6 +3,7 @@ package io.lcs.framework.api.docs;
 
 import io.lcs.framework.api.annotation.ApiInfo;
 import io.lcs.framework.api.annotation.ApiParam;
+import io.lcs.framework.api.annotation.ApiRequest;
 import io.lcs.framework.api.annotation.ApiResponse;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -47,19 +48,25 @@ public class ApiScanner {
 
 			for (Method method : clazz.getDeclaredMethods()) {
 				RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
-				if( requestMapping == null ) continue;
-
 				ApiResponse apiResponse = method.getAnnotation(ApiResponse.class);
+				if( requestMapping == null ) continue;
+				if( apiResponse == null ) continue;
+				if (method.getAnnotation(ApiRequest.class) == null) continue;
 
 				Api api = new Api();
 				api.setInfo(method.getAnnotation(ApiInfo.class));
+				api.setApiRequest(method.getAnnotation(ApiRequest.class));
+				api.setApiResponse(apiResponse);
 				api.setApi(getApis(classRequestMapping, requestMapping.value()));
-				if( apiResponse != null && StringUtils.hasLength(apiResponse.demo())){
+				if (StringUtils.hasLength(apiResponse.demo())) {
 					api.setResponseDemo(apiResponse.demo());
 				}
 
-				api.setResponse(classToApiParam(method.getGenericReturnType()));
-				api.setReturnType(method.getReturnType());
+				if( apiResponse.value().length>0 ){
+					api.setResponse(Arrays.asList(apiResponse.value()));
+				}else{
+					api.setResponse(classToApiParam(apiResponse.bean()));
+				}
 				list.add(api);
 			}
 		}
@@ -67,8 +74,7 @@ public class ApiScanner {
 		Collections.sort(list,new Comparator<Api>() {
 			@Override
 			public int compare(Api o1, Api o2) {
-				return 0;
-				//return o1.getApi()[0].compareTo(o2.getApi()[0]);
+				return o1.getApi()[0].compareTo(o2.getApi()[0]);
 			}
 		});
 		return list;
@@ -119,17 +125,12 @@ public class ApiScanner {
 		return map;
 	}
 
-	private static List<ApiParam> classToApiParam( Type type ){
-		Class clazz = null;
-		if( type instanceof Class ){
-			clazz = (Class) type;
-		}else if( type instanceof ParameterizedType){
-			clazz = (Class) ((ParameterizedType) type).getActualTypeArguments()[0];
-		}else{
+	private static List<ApiParam> classToApiParam( Class clazz ){
+
+		if (clazz.getSuperclass() == null || clazz.getSuperclass().getName().indexOf("BasePojo") == -1) {
 			return Collections.EMPTY_LIST;
 		}
 
-		if( clazz.getSuperclass() == null || clazz.getSuperclass().getName().indexOf("BasePojo") == -1 ) return Collections.EMPTY_LIST;
 		List<ApiParam> apiParamList = new ArrayList<>();
 		for (Field field : clazz.getDeclaredFields()) {
 			apiParamList.add(new Api.ApiParamImp()
