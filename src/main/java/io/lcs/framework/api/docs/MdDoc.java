@@ -3,12 +3,10 @@ package io.lcs.framework.api.docs;
 import io.lcs.framework.api.annotation.ApiParam;
 import io.lcs.framework.api.annotation.ApiResponse;
 import org.springframework.util.StringUtils;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,7 +21,7 @@ public class MdDoc {
 	private static String doc = "/tmp/doc";
 
 	public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, IOException, InvocationTargetException {
-		//doc = System.getProperty("md.path", doc);
+		doc = System.getProperty("md.path", doc);
 
 		List<Api> list = ApiScanner.scanRequestMapping();
 
@@ -186,7 +184,18 @@ public class MdDoc {
 			tab += "\t";
 		}
 		if (api.getApiResponse().type().equals(ApiResponse.EType.PAGE)) {
-			throw new NotImplementedException();
+			params = new StringBuffer("{\n" +
+					"    \"last\": true,\n" +
+					"    \"totalPages\": 0,\n" +
+					"    \"totalElements\": 0,\n" +
+					"    \"sort\": null,\n" +
+					"    \"first\": true,\n" +
+					"    \"numberOfElements\": 0,\n" +
+					"    \"size\": 10,\n" +
+					"    \"number\": 0,\n" +
+					"    \"content\": [\n" +
+					"");
+			tab += "\t\t";
 		}
 
 		params.append(tab + "{\n");
@@ -206,6 +215,14 @@ public class MdDoc {
 		if (api.getApiResponse().type().equals(ApiResponse.EType.ARRAY)) {
 			tab = tab.replaceFirst("\t", "");
 			params.append("]\n");
+		}
+		if (api.getApiResponse().type().equals(ApiResponse.EType.PAGE)) {
+			tab = tab.replaceFirst("\t", "");
+			params.append(tab);
+			params.append("]\n");
+			tab = tab.replaceFirst("\t", "");
+			params.append(tab);
+			params.append("}");
 		}
 
 		return params.toString();
