@@ -10,6 +10,7 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
 import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -22,7 +23,23 @@ import java.util.*;
  * Created by lcs on 02/03/2017.
  */
 public class ApiScanner {
-	private static final String methodMetadataClass = "classpath*:/io/lcs/**/*.class";
+	private static String API_PACKAGE = System.getProperty("api.package");
+	private static String[] API_FILTER = System.getProperty("api.filter","").split(",");
+	private static Resource[] resources;
+	static {
+
+		Assert.isTrue(!StringUtils.isEmpty(API_PACKAGE),"无效 api.package");
+		String packageClass = String.format("classpath*:/%s/**/*.class", API_PACKAGE.replace('.', '/'));
+		System.out.printf("scanning package %s\n\n", packageClass);
+		System.out.printf("api filter is %s\n\n", API_FILTER);
+
+		PathMatchingResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
+		try {
+			resources = resourcePatternResolver.getResources(packageClass);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	/**
 	 * 获取所有api
 	 * @return
@@ -36,9 +53,8 @@ public class ApiScanner {
 		PathMatchingResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
 		CachingMetadataReaderFactory metadataReaderFactory = new CachingMetadataReaderFactory(resourcePatternResolver);
 
-		Resource[] e = resourcePatternResolver.getResources(methodMetadataClass);
 		List<Api> list = new ArrayList<>();
-		for (Resource r : e) {
+		for (Resource r : resources) {
 			MetadataReader metadataReader = metadataReaderFactory.getMetadataReader(r);
 			AnnotationMetadata annotationMetadata = metadataReader.getAnnotationMetadata();
 
@@ -109,9 +125,8 @@ public class ApiScanner {
 
 		PathMatchingResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
 		CachingMetadataReaderFactory metadataReaderFactory = new CachingMetadataReaderFactory(resourcePatternResolver);
-		Resource[] e = resourcePatternResolver.getResources(methodMetadataClass);
 		Map<Class, Object[]> map = new HashMap<>();
-		for (Resource r : e) {
+		for (Resource r : resources) {
 			MetadataReader metadataReader = metadataReaderFactory.getMetadataReader(r);
 			AnnotationMetadata annotationMetadata = metadataReader.getAnnotationMetadata();
 			Class clazz = Class.forName(annotationMetadata.getClassName());
@@ -158,5 +173,24 @@ public class ApiScanner {
 			}
 		}
 		return "";
+	}
+
+	public static PostMan.PostManRequest getPostMan() throws IOException, ClassNotFoundException, IllegalAccessException, InstantiationException {
+		PathMatchingResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
+		CachingMetadataReaderFactory metadataReaderFactory = new CachingMetadataReaderFactory(resourcePatternResolver);
+		for (Resource r : resources) {
+			MetadataReader metadataReader = metadataReaderFactory.getMetadataReader(r);
+			AnnotationMetadata annotationMetadata = metadataReader.getAnnotationMetadata();
+			Class clazz = Class.forName(annotationMetadata.getClassName());
+
+			for( Type type :clazz.getGenericInterfaces()){
+				if( PostMan.PostManRequest.class.equals(type) ){
+					return (PostMan.PostManRequest)clazz.newInstance();
+				}
+			}
+
+		}
+
+		return null;
 	}
 }

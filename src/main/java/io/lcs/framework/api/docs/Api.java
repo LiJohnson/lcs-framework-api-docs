@@ -4,6 +4,7 @@ import io.lcs.framework.api.annotation.ApiInfo;
 import io.lcs.framework.api.annotation.ApiParam;
 import io.lcs.framework.api.annotation.ApiRequest;
 import io.lcs.framework.api.annotation.ApiResponse;
+import org.springframework.util.StringUtils;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -40,10 +41,6 @@ public class Api {
 
 	public void setApi(String[] api) {
 		this.api = api;
-	}
-
-	public String getParamDemo() {
-		return paramDemo;
 	}
 
 	public void setParamDemo(String paramDemo) {
@@ -89,7 +86,38 @@ public class Api {
 	public void setApiResponse(ApiResponse apiResponse) {
 		this.apiResponse = apiResponse;
 	}
+	public String getParamDemo() {
+		if( StringUtils.hasLength(this.paramDemo) ) return this.paramDemo;
+		StringBuffer params = new StringBuffer("{\n");
+		for (ApiParam attributes : apiRequest.value()) {
+			String val = Number.class.isAssignableFrom(attributes.type()) ? attributes.demo() : "\"" + attributes.demo() + "\"";
+			if( !StringUtils.hasLength(val) ) val = "\"\"";
+			params.append(String.format("\t\"%s\":%s,\n",
+					attributes.value(),
+					val
+			));
+		}
+		params.append("}\n");
+		return params.toString().replace(",\n}", "\n}");
+	}
 
+	public String getParamList(){
+		StringBuffer params = new StringBuffer();
+		for (ApiParam attributes: this.apiRequest.value()) {
+			String type = attributes.type().getSimpleName();
+			if( attributes.type().isEnum() ){
+				type = String.format("[enum(%s)](#enum-%s) ", type, type.toLowerCase());
+			}
+			params.append(String.format("| %s      | %s  | %s | %s| %s |\n",
+					attributes.value(),
+					type.toString().replaceAll("\\[\\]","[ ]"),
+					attributes.required(),
+					attributes.description(),
+					attributes.demo()
+			));
+		}
+		return params.toString();
+	}
 	public static class ApiParamImp implements ApiParam {
 		private Class typeImp = Object.class;
 		private String valueImp = "";

@@ -16,7 +16,7 @@ public @interface ApiResponse {
 	EType type();
 
 	/**
-	 *返回实体
+	 * 返回实体
 	 * @return
 	 */
 	Class bean() default Object.class;

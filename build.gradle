@@ -22,4 +22,5 @@ repositories {
 dependencies {
     //compile 'io.swagger:swagger-core:+'
     compile("org.springframework:spring-web:$springVersion")
+    compile "com.alibaba:fastjson:1.2.29"
 }
